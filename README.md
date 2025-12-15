@@ -1,3 +1,3 @@
 # Training-Analysis
 
-A starter Python project. Replace this text with project details.
+This program analyzes training plan files (CSV) for further processing and analysis.
