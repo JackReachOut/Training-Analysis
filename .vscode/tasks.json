@@ -1,0 +1,37 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Debug Training Analysis (main.py)",
+			"type": "shell",
+			"command": "/Users/jackreachout/repo/Training-Analysis/.venv/bin/python",
+			"args": [
+				"-m",
+				"debugpy",
+				"--listen",
+				"5678",
+				"--wait-for-client",
+				"src/main.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		},
+		{
+			"label": "Debug Training Analysis (main.py)",
+			"type": "shell",
+			"command": "/Users/jackreachout/repo/Training-Analysis/.venv/bin/python",
+			"args": [
+				"-m",
+				"debugpy",
+				"--listen",
+				"5678",
+				"--wait-for-client",
+				"src/main.py"
+			],
+			"isBackground": false,
+			"problemMatcher": [],
+			"group": "build"
+		}
+	]
+}
