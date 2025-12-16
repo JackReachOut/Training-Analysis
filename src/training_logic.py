@@ -203,9 +203,7 @@ def load_training_plan_from_csv(csv_path):
             ex4_set3_weight = parse_float(df.iloc[28, col])
             ex4_set4_reps = int(df.iloc[32, col]) if pd.notna(df.iloc[32, col]) else 0
             ex4_set4_weight = parse_float(df.iloc[28, col])
-            ex4_set5_reps = int(df.iloc[33, col]) if pd.notna(df.iloc[33, col]) else 0
-            ex4_set5_weight = parse_float(df.iloc[28, col])
-            ex4_sets_list = [Set(reps=ex4_set1_reps, weight=ex4_set1_weight), Set(reps=ex4_set2_reps, weight=ex4_set2_weight), Set(reps=ex4_set3_reps, weight=ex4_set3_weight), Set(reps=ex4_set4_reps, weight=ex4_set4_weight), Set(reps=ex4_set5_reps, weight=ex4_set5_weight)]
+            ex4_sets_list = [Set(reps=ex4_set1_reps, weight=ex4_set1_weight), Set(reps=ex4_set2_reps, weight=ex4_set2_weight), Set(reps=ex4_set3_reps, weight=ex4_set3_weight), Set(reps=ex4_set4_reps, weight=ex4_set4_weight)]
             exercises.append(Exercise(name=ex4_name, sets=ex4_sets, set_list=ex4_sets_list))
         else:
             continue
