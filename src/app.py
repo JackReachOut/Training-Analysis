@@ -33,11 +33,19 @@ csv_files = [f for f in os.listdir(csv_dir) if f.endswith(".csv")]
 csv_files.sort(key=extract_leading_number, reverse=True)
 
 st.sidebar.markdown("**Verfügbare Trainingspläne:**")
-selected_csv = None
-for f in csv_files:
-    label = f.replace('.csv', '')
-    if st.sidebar.button(label, key=f"plan_{label}"):
-        selected_csv = f
+
+# Use session_state to persist selected plan
+if "selected_csv" not in st.session_state:
+    st.session_state.selected_csv = csv_files[0] if csv_files else None
+
+plan_labels = [f.replace('.csv', '') for f in csv_files]
+selected_label = st.sidebar.radio(
+    "Trainingsplan auswählen:",
+    options=plan_labels,
+    index=plan_labels.index(st.session_state.selected_csv.replace('.csv', '')) if st.session_state.selected_csv else 0
+)
+selected_csv = f"{selected_label}.csv"
+st.session_state.selected_csv = selected_csv
 
 if selected_csv:
     csv_path = os.path.join(csv_dir, selected_csv)
@@ -110,6 +118,65 @@ if selected_csv:
                     upper_limit = 1
                 fig_bar = px.bar(bar_df, x="Exercise", y="Ø Sessions bis Erhöhung", range_y=[0, upper_limit], title="Ø Sessions bis Gewichtserhöhung pro Exercise")
                 st.plotly_chart(fig_bar, use_container_width=True)
+
+
+        # --- Neue Diagrammreihe: Gewichtsentwicklung & Reps pro Exercise ---
+        st.markdown("---")
+        st.subheader("Verlauf: Gewicht & Wiederholungen pro Übung über Sessions")
+        col3, col4 = st.columns(2)
+
+        # Auswahl für mehrere Exercises per Slide-Toggle (Checkboxes)
+        exercises = df["Exercise"].unique()
+        st.markdown("**Wähle Übungen für die Diagramme:**")
+        selected_exs = []
+        for ex in exercises:
+            if st.toggle(f"{ex}", value=(ex == exercises[0])):
+                selected_exs.append(ex)
+
+        # Kurvendiagramm: Gewichtsentwicklung pro (mehrere) Exercise(s)
+        with col3:
+            if selected_exs:
+                weight_df = df[df["Exercise"].isin(selected_exs)]
+                fig_weight = px.line(
+                    weight_df,
+                    x="Session",
+                    y="Weight (kg)",
+                    color="Exercise",
+                    markers=True,
+                    title=f"Gewichtsentwicklung: {' & '.join(selected_exs)} über Sessions"
+                )
+                fig_weight.update_layout(
+                    xaxis_title="Session",
+                    yaxis_title="Gewicht (kg)"
+                )
+                st.plotly_chart(fig_weight, use_container_width=True)
+            else:
+                st.info("Keine Übung ausgewählt.")
+
+        # Kurvendiagramm: Reps pro (mehrere) Exercise(s)
+        with col4:
+            if selected_exs:
+                reps_df = df[df["Exercise"].isin(selected_exs)]
+                # Group by Exercise and Session, then sum or average reps (choose average for more meaningful bar height)
+                bar_reps = reps_df.groupby(["Exercise", "Session"])['Reps'].mean().reset_index()
+                fig_reps_bar = px.bar(
+                    bar_reps,
+                    x="Session",
+                    y="Reps",
+                    color="Exercise",
+                    barmode="group",
+                    title=f"Wiederholungen (Balkendiagramm): {' & '.join(selected_exs)} über Sessions"
+                )
+                fig_reps_bar.update_layout(
+                    xaxis_title="Session",
+                    yaxis_title="Ø Wiederholungen"
+                )
+                st.plotly_chart(fig_reps_bar, use_container_width=True)
+            else:
+                st.info("Keine Übung ausgewählt.")
+
+
+
 
         # --- Tabelle darunter ---
         st.dataframe(df, use_container_width=True, hide_index=True)
