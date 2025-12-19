@@ -67,7 +67,8 @@ if selected_csv:
         df = pd.DataFrame(rows)
 
         # --- Diagramm-Bereich ---
-        col1, col2 = st.columns(2)
+        # Responsives Layout: breite Spalte für Hauptdiagramm, schmalere für Zusatzdiagramm
+        col1, col2 = st.columns([2, 1])
 
         # Kreisdiagramm: Anzahl Exercises pro Session
         with col1:
@@ -123,7 +124,8 @@ if selected_csv:
         # --- Neue Diagrammreihe: Gewichtsentwicklung & Reps pro Exercise ---
         st.markdown("---")
         st.subheader("Verlauf: Gewicht & Wiederholungen pro Übung über Sessions")
-        col3, col4 = st.columns(2)
+        # Responsives Layout: beide Spalten gleich, aber auf kleinen Bildschirmen untereinander
+        col3, col4 = st.columns([1, 1])
 
         # Auswahl für mehrere Exercises per Slide-Toggle (Checkboxes)
         exercises = df["Exercise"].unique()
@@ -179,6 +181,7 @@ if selected_csv:
 
 
         # --- Tabelle darunter ---
+        # Tabelle: auf kleinen Bildschirmen horizontal scrollbar
         st.dataframe(df, use_container_width=True, hide_index=True)
     else:
         st.info("No data found in this CSV.")
