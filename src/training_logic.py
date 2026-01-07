@@ -1,3 +1,26 @@
+import io
+import datetime
+def generate_sample_csv():
+    """
+    Returns a sample CSV (as bytes) matching the expected structure for upload/download.
+    """
+    # Example: 2 exercises, 2 sessions, 2 sets each
+    data = [
+        ["", "Session 1", "Session 2"],
+        ["Planname", "", ""],
+        ["Kniebeuge", "", ""],
+        ["60", "65", ""],
+        ["WD", 8, 7],
+        ["WD", 8, 7],
+        ["Bankdrücken", "", ""],
+        ["40", "42.5", ""],
+        ["WD", 10, 9],
+        ["WD", 10, 9],
+    ]
+    df = pd.DataFrame(data)
+    output = io.StringIO()
+    df.to_csv(output, sep=';', header=False, index=False)
+    return output.getvalue().encode("utf-8")
 import pandas as pd
 import glob
 import os
@@ -37,178 +60,43 @@ def load_training_plan_from_csv(csv_path):
     training_plans = []
     num_cols = df.shape[1]
     plan_name = str(df.iloc[1, 0]) if pd.notna(df.iloc[1, 0]) else None
+
+    # Dynamische Block-Erkennung: Suche alle Zeilen, in denen ein Übungsname steht (erste Spalte, nicht leer, nicht "WD", nicht Gewicht, nicht Zahl)
+    exercise_blocks = []
+    for idx in range(df.shape[0]):
+        val = str(df.iloc[idx, 0])
+        if val and val.strip() and val.strip() != 'WD' and not val.strip().replace('.', '', 1).isdigit() and not any(x in val.lower() for x in ['kg', 'wd', 'wiederholung', 'satz', 'pause']):
+            # Prüfe, ob darunter ein Gewicht steht (nächste Zeile ist float oder Zahl)
+            if idx+1 < df.shape[0]:
+                kg_val = str(df.iloc[idx+1, 0])
+                if kg_val and (kg_val.replace(',', '.').replace('-', '').replace(' ', '').replace('.', '', 1).isdigit() or 'kg' in kg_val.lower()):
+                    exercise_blocks.append(idx)
+
+    # Finde für jeden Block das Ende (nächster Block oder Dateiende)
+    block_ranges = []
+    for i, start in enumerate(exercise_blocks):
+        end = exercise_blocks[i+1] if i+1 < len(exercise_blocks) else df.shape[0]
+        block_ranges.append((start, end))
+
     for col in range(1, num_cols):
-        if pd.isna(df.iloc[8, col]) and pd.isna(df.iloc[13, col]) and pd.isna(df.iloc[18, col]):
+        # Überspringe leere Trainingstage
+        if all(pd.isna(df.iloc[row, col]) for row in range(df.shape[0])):
             continue
         exercises = []
-        if plan_name == "Krafttraining 1":
-            ex1_name = str(df.iloc[6, 0])
-            ex1_kg_row = 7
-            ex1_dash_row = 10
-            ex1_sets = df.iloc[ex1_kg_row:ex1_dash_row+1, 0].tolist().count('WD')
-            ex1_set1_reps = int(df.iloc[8, col]) if pd.notna(df.iloc[8, col]) else 0
-            ex1_set1_weight = parse_float(df.iloc[7, col])
-            ex1_set2_reps = int(df.iloc[9, col]) if pd.notna(df.iloc[9, col]) else 0
-            ex1_set2_weight = parse_float(df.iloc[7, col])
-            ex1_sets_list = [Set(reps=ex1_set1_reps, weight=ex1_set1_weight), Set(reps=ex1_set2_reps, weight=ex1_set2_weight)]
-            exercises.append(Exercise(name=ex1_name, sets=ex1_sets, set_list=ex1_sets_list))
-
-            ex2_name = str(df.iloc[11, 0])
-            ex2_kg_row = 12
-            ex2_dash_row = 15
-            ex2_sets = df.iloc[ex2_kg_row:ex2_dash_row+1, 0].tolist().count('WD')
-            ex2_set1_reps = int(df.iloc[13, col]) if pd.notna(df.iloc[13, col]) else 0
-            ex2_set1_weight = parse_float(df.iloc[12, col])
-            ex2_set2_reps = int(df.iloc[14, col]) if pd.notna(df.iloc[14, col]) else 0
-            ex2_set2_weight = parse_float(df.iloc[12, col])
-            ex2_sets_list = [Set(reps=ex2_set1_reps, weight=ex2_set1_weight), Set(reps=ex2_set2_reps, weight=ex2_set2_weight)]
-            exercises.append(Exercise(name=ex2_name, sets=ex2_sets, set_list=ex2_sets_list))
-
-            ex3_name = str(df.iloc[16, 0])
-            ex3_kg_row = 17
-            ex3_dash_row = 20
-            ex3_sets = df.iloc[ex3_kg_row:ex3_dash_row+1, 0].tolist().count('WD')
-            ex3_set1_reps = int(df.iloc[18, col]) if pd.notna(df.iloc[18, col]) else 0
-            ex3_set1_weight = parse_float(df.iloc[17, col])
-            ex3_set2_reps = int(df.iloc[19, col]) if pd.notna(df.iloc[19, col]) else 0
-            ex3_set2_weight = parse_float(df.iloc[17, col])
-            ex3_sets_list = [Set(reps=ex3_set1_reps, weight=ex3_set1_weight), Set(reps=ex3_set2_reps, weight=ex3_set2_weight)]
-            exercises.append(Exercise(name=ex3_name, sets=ex3_sets, set_list=ex3_sets_list))
-
-            ex4_name = str(df.iloc[21, 0])
-            ex4_kg_row = 22
-            ex4_dash_row = 28
-            ex4_sets = df.iloc[ex4_kg_row:ex4_dash_row+1, 0].tolist().count('WD')
-            ex4_set1_reps = int(df.iloc[23, col]) if pd.notna(df.iloc[23, col]) else 0
-            ex4_set1_weight = parse_float(df.iloc[22, col])
-            ex4_set2_reps = int(df.iloc[24, col]) if pd.notna(df.iloc[24, col]) else 0
-            ex4_set2_weight = parse_float(df.iloc[22, col])
-            ex4_set3_reps = int(df.iloc[25, col]) if pd.notna(df.iloc[25, col]) else 0
-            ex4_set3_weight = parse_float(df.iloc[22, col])
-            ex4_set4_reps = int(df.iloc[26, col]) if pd.notna(df.iloc[26, col]) else 0
-            ex4_set4_weight = parse_float(df.iloc[22, col])
-            ex4_set5_reps = int(df.iloc[27, col]) if pd.notna(df.iloc[27, col]) else 0
-            ex4_set5_weight = parse_float(df.iloc[22, col])
-            ex4_sets_list = [Set(reps=ex4_set1_reps, weight=ex4_set1_weight), Set(reps=ex4_set2_reps, weight=ex4_set2_weight), Set(reps=ex4_set3_reps, weight=ex4_set3_weight), Set(reps=ex4_set4_reps, weight=ex4_set4_weight), Set(reps=ex4_set5_reps, weight=ex4_set5_weight)]
-            exercises.append(Exercise(name=ex4_name, sets=ex4_sets, set_list=ex4_sets_list))
-
-        elif plan_name in ["Krafttraining 2 ", "Krafttraining 3", "Krafttraining 4", "Krafttraining 5"]:
-            ex1_name = str(df.iloc[6, 0])
-            ex1_kg_row = 7
-            ex1_dash_row = 11
-            ex1_sets = df.iloc[ex1_kg_row:ex1_dash_row+1, 0].tolist().count('WD')
-            ex1_set1_reps = int(df.iloc[8, col]) if pd.notna(df.iloc[8, col]) else 0
-            ex1_set1_weight = parse_float(df.iloc[7, col])
-            ex1_set2_reps = int(df.iloc[9, col]) if pd.notna(df.iloc[9, col]) else 0
-            ex1_set2_weight = parse_float(df.iloc[7, col])
-            ex1_set3_reps = int(df.iloc[10, col]) if pd.notna(df.iloc[10, col]) else 0
-            ex1_set3_weight = parse_float(df.iloc[7, col])
-            ex1_sets_list = [Set(reps=ex1_set1_reps, weight=ex1_set1_weight), Set(reps=ex1_set2_reps, weight=ex1_set2_weight), Set(reps=ex1_set3_reps, weight=ex1_set3_weight)]
-            exercises.append(Exercise(name=ex1_name, sets=ex1_sets, set_list=ex1_sets_list))
-
-            ex2_name = str(df.iloc[12, 0])
-            ex2_kg_row = 13
-            ex2_dash_row = 17
-            ex2_sets = df.iloc[ex2_kg_row:ex2_dash_row+1, 0].tolist().count('WD')
-            ex2_set1_reps = int(df.iloc[14, col]) if pd.notna(df.iloc[14, col]) else 0
-            ex2_set1_weight = parse_float(df.iloc[12, col])
-            ex2_set2_reps = int(df.iloc[15, col]) if pd.notna(df.iloc[15, col]) else 0
-            ex2_set2_weight = parse_float(df.iloc[12, col])
-            ex2_set3_reps = int(df.iloc[16, col]) if pd.notna(df.iloc[16, col]) else 0
-            ex2_set3_weight = parse_float(df.iloc[12, col])
-            ex2_sets_list = [Set(reps=ex2_set1_reps, weight=ex2_set1_weight), Set(reps=ex2_set2_reps, weight=ex2_set2_weight), Set(reps=ex2_set3_reps, weight=ex2_set3_weight)]
-            exercises.append(Exercise(name=ex2_name, sets=ex2_sets, set_list=ex2_sets_list))
-
-            ex3_name = str(df.iloc[18, 0])
-            ex3_kg_row = 19
-            ex3_dash_row = 23
-            ex3_sets = df.iloc[ex3_kg_row:ex3_dash_row+1, 0].tolist().count('WD')
-            ex3_set1_reps = int(df.iloc[20, col]) if pd.notna(df.iloc[20, col]) else 0
-            ex3_set1_weight = parse_float(df.iloc[19, col])
-            ex3_set2_reps = int(df.iloc[21, col]) if pd.notna(df.iloc[21, col]) else 0
-            ex3_set2_weight = parse_float(df.iloc[19, col])
-            ex3_set3_reps = int(df.iloc[22, col]) if pd.notna(df.iloc[22, col]) else 0
-            ex3_set3_weight = parse_float(df.iloc[19, col])
-            ex3_sets_list = [Set(reps=ex3_set1_reps, weight=ex3_set1_weight), Set(reps=ex3_set2_reps, weight=ex3_set2_weight), Set(reps=ex3_set3_reps, weight=ex3_set3_weight)]
-            exercises.append(Exercise(name=ex3_name, sets=ex3_sets, set_list=ex3_sets_list))
-
-            ex4_name = str(df.iloc[24, 0])
-            ex4_kg_row = 25
-            ex4_dash_row = 29
-            ex4_sets = df.iloc[ex4_kg_row:ex4_dash_row+1, 0].tolist().count('WD')
-            ex4_set1_reps = int(df.iloc[26, col]) if pd.notna(df.iloc[26, col]) else 0
-            ex4_set1_weight = parse_float(df.iloc[25, col])
-            ex4_set2_reps = int(df.iloc[27, col]) if pd.notna(df.iloc[27, col]) else 0
-            ex4_set2_weight = parse_float(df.iloc[25, col])
-            ex4_set3_reps = int(df.iloc[28, col]) if pd.notna(df.iloc[28, col]) else 0
-            ex4_set3_weight = parse_float(df.iloc[25, col])
-            ex4_sets_list = [Set(reps=ex4_set1_reps, weight=ex4_set1_weight), Set(reps=ex4_set2_reps, weight=ex4_set2_weight), Set(reps=ex4_set3_reps, weight=ex4_set3_weight)]
-            exercises.append(Exercise(name=ex4_name, sets=ex4_sets, set_list=ex4_sets_list))
-
-        elif plan_name == "Krafttraining 6":
-            ex1_name = str(df.iloc[6, 0])
-            ex1_kg_row = 7
-            ex1_dash_row = 12
-            ex1_sets = df.iloc[ex1_kg_row:ex1_dash_row+1, 0].tolist().count('WD')
-            ex1_set1_reps = int(df.iloc[8, col]) if pd.notna(df.iloc[8, col]) else 0
-            ex1_set1_weight = parse_float(df.iloc[7, col])
-            ex1_set2_reps = int(df.iloc[9, col]) if pd.notna(df.iloc[9, col]) else 0
-            ex1_set2_weight = parse_float(df.iloc[7, col])
-            ex1_set3_reps = int(df.iloc[10, col]) if pd.notna(df.iloc[10, col]) else 0
-            ex1_set3_weight = parse_float(df.iloc[7, col])
-            ex1_set4_reps = int(df.iloc[11, col]) if pd.notna(df.iloc[11, col]) else 0
-            ex1_set4_weight = parse_float(df.iloc[7, col])
-            ex1_sets_list = [Set(reps=ex1_set1_reps, weight=ex1_set1_weight), Set(reps=ex1_set2_reps, weight=ex1_set2_weight), Set(reps=ex1_set3_reps, weight=ex1_set3_weight), Set(reps=ex1_set4_reps, weight=ex1_set4_weight)]
-            exercises.append(Exercise(name=ex1_name, sets=ex1_sets, set_list=ex1_sets_list))
-
-            ex2_name = str(df.iloc[13, 0])
-            ex2_kg_row = 14
-            ex2_dash_row = 19
-            ex2_sets = df.iloc[ex2_kg_row:ex2_dash_row+1, 0].tolist().count('WD')
-            ex2_set1_reps = int(df.iloc[15, col]) if pd.notna(df.iloc[15, col]) else 0
-            ex2_set1_weight = parse_float(df.iloc[14, col])
-            ex2_set2_reps = int(df.iloc[16, col]) if pd.notna(df.iloc[16, col]) else 0
-            ex2_set2_weight = parse_float(df.iloc[14, col])
-            ex2_set3_reps = int(df.iloc[17, col]) if pd.notna(df.iloc[17, col]) else 0
-            ex2_set3_weight = parse_float(df.iloc[14, col])
-            ex2_set4_reps = int(df.iloc[18, col]) if pd.notna(df.iloc[18, col]) else 0
-            ex2_set4_weight = parse_float(df.iloc[14, col])
-            ex2_sets_list = [Set(reps=ex2_set1_reps, weight=ex2_set1_weight), Set(reps=ex2_set2_reps, weight=ex2_set2_weight), Set(reps=ex2_set3_reps, weight=ex2_set3_weight), Set(reps=ex2_set4_reps, weight=ex2_set4_weight)]
-            exercises.append(Exercise(name=ex2_name, sets=ex2_sets, set_list=ex2_sets_list))
-
-            ex3_name = str(df.iloc[20, 0])
-            ex3_kg_row = 21
-            ex3_dash_row = 26
-            ex3_sets = df.iloc[ex3_kg_row:ex3_dash_row+1, 0].tolist().count('WD')
-            ex3_set1_reps = int(df.iloc[22, col]) if pd.notna(df.iloc[22, col]) else 0
-            ex3_set1_weight = parse_float(df.iloc[21, col])
-            ex3_set2_reps = int(df.iloc[23, col]) if pd.notna(df.iloc[23, col]) else 0
-            ex3_set2_weight = parse_float(df.iloc[21, col])
-            ex3_set3_reps = int(df.iloc[24, col]) if pd.notna(df.iloc[24, col]) else 0
-            ex3_set3_weight = parse_float(df.iloc[21, col])
-            ex3_set4_reps = int(df.iloc[25, col]) if pd.notna(df.iloc[25, col]) else 0
-            ex3_set4_weight = parse_float(df.iloc[21, col])
-            ex3_sets_list = [Set(reps=ex3_set1_reps, weight=ex3_set1_weight), Set(reps=ex3_set2_reps, weight=ex3_set2_weight), Set(reps=ex3_set3_reps, weight=ex3_set3_weight), Set(reps=ex3_set4_reps, weight=ex3_set4_weight)]
-            exercises.append(Exercise(name=ex3_name, sets=ex3_sets, set_list=ex3_sets_list))
-
-            ex4_name = str(df.iloc[27, 0])
-            ex4_kg_row = 28
-            ex4_dash_row = 33
-            ex4_sets = df.iloc[ex4_kg_row:ex4_dash_row+1, 0].tolist().count('WD')
-            ex4_set1_reps = int(df.iloc[29, col]) if pd.notna(df.iloc[29, col]) else 0
-            ex4_set1_weight = parse_float(df.iloc[28, col])
-            ex4_set2_reps = int(df.iloc[30, col]) if pd.notna(df.iloc[30, col]) else 0
-            ex4_set2_weight = parse_float(df.iloc[28, col])
-            ex4_set3_reps = int(df.iloc[31, col]) if pd.notna(df.iloc[31, col]) else 0
-            ex4_set3_weight = parse_float(df.iloc[28, col])
-            ex4_set4_reps = int(df.iloc[32, col]) if pd.notna(df.iloc[32, col]) else 0
-            ex4_set4_weight = parse_float(df.iloc[28, col])
-            ex4_sets_list = [Set(reps=ex4_set1_reps, weight=ex4_set1_weight), Set(reps=ex4_set2_reps, weight=ex4_set2_weight), Set(reps=ex4_set3_reps, weight=ex4_set3_weight), Set(reps=ex4_set4_reps, weight=ex4_set4_weight)]
-            exercises.append(Exercise(name=ex4_name, sets=ex4_sets, set_list=ex4_sets_list))
-        else:
-            continue
-        training_plans.append(TrainingPlan(name=plan_name, exercises=exercises))
-        print(training_plans)
+        for block_start, block_end in block_ranges:
+            name = str(df.iloc[block_start, 0]).strip()
+            kg_row = block_start + 1
+            weight = parse_float(df.iloc[kg_row, col]) if kg_row < df.shape[0] else 0.0
+            # Sätze: Zeilen im Block, die "WD" in Spalte 0 haben, enthalten die Wiederholungen in Spalte col
+            sets = []
+            for row in range(block_start+2, block_end):
+                if str(df.iloc[row, 0]).strip() == 'WD':
+                    reps = int(df.iloc[row, col]) if pd.notna(df.iloc[row, col]) else 0
+                    sets.append(Set(reps=reps, weight=weight))
+            if sets:
+                exercises.append(Exercise(name=name, sets=len(sets), set_list=sets))
+        if exercises:
+            training_plans.append(TrainingPlan(name=plan_name, exercises=exercises))
     return training_plans
 
 def get_csv_path(directory, filename):
