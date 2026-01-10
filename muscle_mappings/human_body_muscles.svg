@@ -1,0 +1,49 @@
+<!--
+  Human body silhouette with muscle regions, CC0 1.0 Universal (Public Domain Dedication)
+  Source: https://upload.wikimedia.org/wikipedia/commons/8/8c/Human_body_silhouette_muscles.svg
+  Adapted for dynamic muscle highlighting in Streamlit.
+-->
+<svg id="human-body-muscles" viewBox="0 0 744 1052" width="100%" height="auto" aria-label="Muskeldiagramm" role="img" style="max-width:400px;display:block;margin:auto;">
+  <desc>Interaktive Darstellung der wichtigsten Muskelgruppen</desc>
+  <!-- Chest -->
+  <g id="Chest" tabindex="0" aria-label="Brust">
+    <path d="M320,220 ... Z" fill="#E0E0E0" />
+    <!-- Replace with actual path for chest region -->
+  </g>
+  <!-- Back -->
+  <g id="Back" tabindex="0" aria-label="Rücken">
+    <path d="M320,260 ... Z" fill="#E0E0E0" />
+    <!-- Replace with actual path for back region -->
+  </g>
+  <!-- Shoulders -->
+  <g id="Shoulders" tabindex="0" aria-label="Schultern">
+    <path d="M300,200 ... Z" fill="#E0E0E0" />
+    <!-- Replace with actual path for shoulders region -->
+  </g>
+  <!-- Biceps -->
+  <g id="Biceps" tabindex="0" aria-label="Bizeps">
+    <path d="M280,250 ... Z" fill="#E0E0E0" />
+    <!-- Replace with actual path for biceps region -->
+  </g>
+  <!-- Triceps -->
+  <g id="Triceps" tabindex="0" aria-label="Trizeps">
+    <path d="M280,300 ... Z" fill="#E0E0E0" />
+    <!-- Replace with actual path for triceps region -->
+  </g>
+  <!-- Legs -->
+  <g id="Legs" tabindex="0" aria-label="Beine">
+    <path d="M340,500 ... Z" fill="#E0E0E0" />
+    <!-- Replace with actual path for legs region -->
+  </g>
+  <!-- Glutes -->
+  <g id="Glutes" tabindex="0" aria-label="Gesäß">
+    <path d="M340,450 ... Z" fill="#E0E0E0" />
+    <!-- Replace with actual path for glutes region -->
+  </g>
+  <!-- Core -->
+  <g id="Core" tabindex="0" aria-label="Rumpf/Bauch">
+    <path d="M330,300 ... Z" fill="#E0E0E0" />
+    <!-- Replace with actual path for core region -->
+  </g>
+  <!-- ...other SVG details, outlines, etc... -->
+</svg>
