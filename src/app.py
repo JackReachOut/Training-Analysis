@@ -200,36 +200,7 @@ if selected_csv:
     if rows:
         df = pd.DataFrame(rows)
 
-        # --- MUSCLE GROUP VISUALIZATION SECTION ---
-        st.markdown("---")
-        st.subheader("Muskelgruppen-Visualisierung für Übungen")
-        st.markdown("Wähle eine Übung, um die trainierten Muskelgruppen am Körper hervorzuheben. Die Zuordnung kann unten bearbeitet werden.")
 
-        # Load mapping
-        mapping = load_mapping()
-        unique_exs = get_unique_exercises(df)
-
-        # Exercise selector for visualization
-        selected_ex_vis = st.selectbox("Übung auswählen:", unique_exs, key="muscle_vis_ex_select")
-        muscles_for_ex = mapping.get(selected_ex_vis, [])
-
-        # Show SVG with highlighted muscles
-        st.markdown(get_body_svg(muscles_for_ex), unsafe_allow_html=True)
-
-        # --- Editable Mapping UI (in Expander, less prominent) ---
-        with st.expander("Muskelgruppen-Zuordnung bearbeiten (optional)", expanded=False):
-            st.caption("Hier kannst du die Zuordnung von Übungen zu Muskelgruppen anpassen. In der Regel ist dies nur einmal nötig.")
-            with st.form("edit_muscle_mapping"):
-                new_mapping = {}
-                for ex in unique_exs:
-                    sel = st.multiselect(f"{ex}", MAJOR_MUSCLES, default=mapping.get(ex, []), key=f"map_{ex}")
-                    new_mapping[ex] = sel
-                submitted = st.form_submit_button("Speichern")
-                if submitted:
-                    save_mapping(new_mapping)
-                    st.success("Muskelgruppen-Zuordnung gespeichert. Änderungen werden nach Neuladen sichtbar.")
-
-        st.markdown("---")
 
         # ...existing code for all other graphs and tables...
         # --- Diagramm-Bereich ---
@@ -327,6 +298,37 @@ if selected_csv:
                 st.plotly_chart(fig_reps_bar, use_container_width=True)
             else:
                 st.info("Keine Übung ausgewählt.")
+
+        # --- MUSCLE GROUP VISUALIZATION SECTION (moved below graphs) ---
+        st.markdown("---")
+        st.subheader("Muskelgruppen-Visualisierung für Übungen")
+        st.markdown("Wähle eine Übung, um die trainierten Muskelgruppen am Körper hervorzuheben. Die Zuordnung kann unten bearbeitet werden.")
+
+        # Load mapping
+        mapping = load_mapping()
+        unique_exs = get_unique_exercises(df)
+
+        # Exercise selector for visualization
+        selected_ex_vis = st.selectbox("Übung auswählen:", unique_exs, key="muscle_vis_ex_select")
+        muscles_for_ex = mapping.get(selected_ex_vis, [])
+
+        # Show SVG with highlighted muscles
+        st.markdown(get_body_svg(muscles_for_ex), unsafe_allow_html=True)
+
+        # --- Editable Mapping UI (in Expander, less prominent) ---
+        with st.expander("Muskelgruppen-Zuordnung bearbeiten (optional)", expanded=False):
+            st.caption("Hier kannst du die Zuordnung von Übungen zu Muskelgruppen anpassen. In der Regel ist dies nur einmal nötig.")
+            with st.form("edit_muscle_mapping"):
+                new_mapping = {}
+                for ex in unique_exs:
+                    sel = st.multiselect(f"{ex}", MAJOR_MUSCLES, default=mapping.get(ex, []), key=f"map_{ex}")
+                    new_mapping[ex] = sel
+                submitted = st.form_submit_button("Speichern")
+                if submitted:
+                    save_mapping(new_mapping)
+                    st.success("Muskelgruppen-Zuordnung gespeichert. Änderungen werden nach Neuladen sichtbar.")
+
+        st.markdown("---")
 
         # --- Data Table in Expander ---
         with st.expander("Details als Tabelle anzeigen (optional)", expanded=False):
