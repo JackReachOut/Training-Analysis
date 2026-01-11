@@ -206,7 +206,7 @@ if selected_csv:
 if selected_exs:
     st.markdown("---")
     st.subheader("Muskelgruppen-Visualisierung & Zuordnung")
-    html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "index.html")
+    html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "front_human_body.html")
     mapping_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "muscle_mappings", "exercise_to_muscle.json")
     # Load mappings
     if os.path.exists(mapping_path):
@@ -221,27 +221,37 @@ if selected_exs:
     soup = BeautifulSoup(full_html, "html.parser")
     svg_tag = soup.find("svg", id="human-body-svg")
     predefined_groups = [g.get("id") for g in svg_tag.find_all("g") if g.get("id")]
+    if "back" not in predefined_groups:
+        predefined_groups.append("back")
     predefined_groups = sorted(predefined_groups)
+
+    # Load back view SVG
+    back_html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "back_human_body.html")
+    with open(back_html_path, "r") as f:
+        back_html = f.read()
+    back_soup = BeautifulSoup(back_html, "html.parser")
+    back_svg_tag = back_soup.find("div", class_="human-body")
+
 
     # Collect all highlight ids for selected exercises
     all_highlight_ids = set()
     for ex in selected_exs:
         current_groups = exercise_to_muscle.get(ex, [])
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown("**Vorderansicht**")
+            components.html(str(svg_tag), height=650)
+        with col2:
+            st.markdown("**Rückansicht**")
+            components.html(str(back_svg_tag), height=650)
         selected_groups = st.multiselect(
             f"Wähle Muskelgruppen für '{ex}' (SVG-Regionen)",
             options=predefined_groups,
             default=[g for g in current_groups if g in predefined_groups],
             key=f"predef_{ex}"
         )
-        custom_groups = [g for g in current_groups if g not in predefined_groups]
-        custom_input = st.text_input(
-            f"Weitere Muskelgruppen für '{ex}' (kommagetrennt)",
-            value=", ".join(custom_groups),
-            key=f"custom_{ex}"
-        )
-        custom_list = [g.strip() for g in custom_input.split(",") if g.strip()]
         if st.button(f"Speichere Muskelgruppen für '{ex}'", key=f"save_{ex}"):
-            exercise_to_muscle[ex] = selected_groups + custom_list
+            exercise_to_muscle[ex] = selected_groups
             with open(mapping_path, "w") as f:
                 json.dump(exercise_to_muscle, f, indent=2, ensure_ascii=False)
             st.success(f"Muskelgruppen für '{ex}' gespeichert.")
@@ -249,11 +259,28 @@ if selected_exs:
         all_highlight_ids.update(selected_groups)
         st.markdown(f"#### {ex}")
 
-    # Inject highlight class into SVG <g> elements for selected regions
+
+    # Inject highlight class and force fill inheritance for SVG <g> elements
+    def clear_fill_recursive(tag):
+        # Remove fill and style from tag and all descendants
+        if tag.has_attr("fill"):
+            del tag["fill"]
+        if tag.has_attr("style"):
+            # Remove fill from style attribute if present
+            styles = tag["style"].split(';')
+            styles = [s for s in styles if not s.strip().startswith("fill")]
+            tag["style"] = ';'.join(styles)
+            if tag["style"].strip() == '':
+                del tag["style"]
+        for child in tag.find_all(recursive=False):
+            clear_fill_recursive(child)
+
     for g in svg_tag.find_all("g"):
         gid = g.get("id")
         if gid in all_highlight_ids:
             g["class"] = (g.get("class", "") + " highlight").strip()
+            # Recursively clear fill/style from all children so CSS can apply
+            clear_fill_recursive(g)
         else:
             # Remove highlight if present
             if "class" in g.attrs:
@@ -261,8 +288,40 @@ if selected_exs:
                 if not g["class"].strip():
                     del g["class"]
 
-    # Render SVG body only once
-    st.markdown("<div style='width:100%;text-align:center;'>" + str(svg_tag) + "</div>", unsafe_allow_html=True)
+    # Inject CSS for highlight class directly above SVG
+    highlight_css = """
+    <style>
+    /* Material Design 3 inspired, no border/shadow on SVG */
+    svg#human-body-svg {
+        background: none;
+        margin-bottom: 1.5rem;
+    }
+    svg#human-body-svg g {
+        /* Default body color: soft, neutral light gray */
+        fill: #f3f4f6 !important;
+        stroke: #bdbdbd !important;
+        stroke-width: 1.2 !important;
+        opacity: 1 !important;
+        transition: fill 0.3s, stroke 0.3s, filter 0.3s;
+        filter: none;
+    }
+    svg#human-body-svg g.highlight {
+        /* Highlight: pure red, bold outline, drop shadow */
+        fill: #ff0000 !important; /* Pure red */
+        stroke: #b71c1c !important; /* Red 900 */
+        stroke-width: 2.5 !important;
+        opacity: 0.95 !important;
+        filter: drop-shadow(0 0 8px #ff000088);
+        transition: fill 0.3s, stroke 0.3s, filter 0.3s;
+    }
+    /* Accessibility: focus state */
+    svg#human-body-svg g.highlight:focus {
+        outline: 2.5px solid #ffab00;
+        outline-offset: 2px;
+    }
+    </style>
+    """
+    st.markdown("<div style='width:100%;text-align:center;'>" + highlight_css + str(svg_tag) + "</div>", unsafe_allow_html=True)
 
 
     with col3:
