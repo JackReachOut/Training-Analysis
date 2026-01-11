@@ -9,77 +9,9 @@ import pandas as pd
 import plotly.express as px
 import json
 # Import the new realistic SVG body renderer
-from assets.realistic_body_svg import render_realistic_body_html
 
-# --- Muscle Mapping Config ---
-MAPPING_DIR = os.path.join(os.path.dirname(os.path.dirname(__file__)), "muscle_mappings")
-MAPPING_FILE = os.path.join(MAPPING_DIR, "exercise_to_muscle.json")
-
-MAJOR_MUSCLES = [
-    "Chest", "Back", "Shoulders", "Biceps", "Triceps", "Legs", "Glutes", "Core"
-]
-
-def load_mapping():
-    if os.path.exists(MAPPING_FILE):
-        with open(MAPPING_FILE, "r") as f:
-            return json.load(f)
-    return {}
-
-def save_mapping(mapping):
-    with open(MAPPING_FILE, "w") as f:
-        json.dump(mapping, f, indent=2)
-
-def get_unique_exercises(df):
-    return sorted(df["Exercise"].unique()) if not df.empty else []
-
-# --- SVG Human Body (simplified, major muscle groups as IDs) ---
-def get_body_svg(highlighted=None):
-    highlighted = highlighted or []
-    # Use a light neutral color for default (not black), visible on dark backgrounds
-    color_map = {muscle: ("#FF5722" if muscle in highlighted else "#f5e6da") for muscle in MAJOR_MUSCLES}
-    aria_labels = {
-        "Chest": "Brust",
-        "Back": "Rücken",
-        "Shoulders": "Schultern",
-        "Biceps": "Bizeps",
-        "Triceps": "Trizeps",
-        "Legs": "Beine",
-        "Glutes": "Gesäß",
-        "Core": "Rumpf/Bauch"
-    }
-    # Complex stylized SVG using ellipses, polygons, and paths for a human body
-    svg = f'''
-    <svg viewBox="0 0 200 500" width="100%" height="auto" aria-label="Muskeldiagramm" role="img" style="max-width:400px;display:block;margin:auto;">
-        <desc>Interaktive Darstellung der wichtigsten Muskelgruppen</desc>
-        <!-- Head -->
-        <ellipse cx="100" cy="50" rx="22" ry="28" fill="#f5e6da" stroke="#bfae9e" stroke-width="2" />
-        <!-- Shoulders -->
-        <ellipse id="Shoulders" tabindex="0" aria-label="{aria_labels['Shoulders']}" cx="100" cy="95" rx="45" ry="18" fill="{color_map['Shoulders']}" stroke="#bfae9e" stroke-width="2" />
-        <!-- Chest -->
-        <ellipse id="Chest" tabindex="0" aria-label="{aria_labels['Chest']}" cx="100" cy="130" rx="32" ry="22" fill="{color_map['Chest']}" stroke="#bfae9e" stroke-width="2" />
-        <!-- Back (behind chest, slightly offset) -->
-        <ellipse id="Back" tabindex="0" aria-label="{aria_labels['Back']}" cx="100" cy="130" rx="38" ry="28" fill="{color_map['Back']}" fill-opacity="0.5" stroke="#bfae9e" stroke-width="2" />
-        <!-- Core -->
-        <ellipse id="Core" tabindex="0" aria-label="{aria_labels['Core']}" cx="100" cy="175" rx="25" ry="30" fill="{color_map['Core']}" stroke="#bfae9e" stroke-width="2" />
-        <!-- Glutes -->
-        <ellipse id="Glutes" tabindex="0" aria-label="{aria_labels['Glutes']}" cx="100" cy="220" rx="18" ry="14" fill="{color_map['Glutes']}" stroke="#bfae9e" stroke-width="2" />
-        <!-- Left Biceps -->
-        <ellipse id="Biceps" tabindex="0" aria-label="{aria_labels['Biceps']}" cx="55" cy="130" rx="10" ry="22" fill="{color_map['Biceps']}" stroke="#bfae9e" stroke-width="2" />
-        <!-- Right Biceps -->
-        <ellipse id="Biceps" tabindex="0" aria-label="{aria_labels['Biceps']}" cx="145" cy="130" rx="10" ry="22" fill="{color_map['Biceps']}" stroke="#bfae9e" stroke-width="2" />
-        <!-- Left Triceps -->
-        <ellipse id="Triceps" tabindex="0" aria-label="{aria_labels['Triceps']}" cx="45" cy="170" rx="8" ry="18" fill="{color_map['Triceps']}" stroke="#bfae9e" stroke-width="2" />
-        <!-- Right Triceps -->
-        <ellipse id="Triceps" tabindex="0" aria-label="{aria_labels['Triceps']}" cx="155" cy="170" rx="8" ry="18" fill="{color_map['Triceps']}" stroke="#bfae9e" stroke-width="2" />
-        <!-- Left Leg -->
-        <rect id="Legs" tabindex="0" aria-label="{aria_labels['Legs']}" x="80" y="235" width="15" height="80" rx="8" fill="{color_map['Legs']}" stroke="#bfae9e" stroke-width="2" />
-        <!-- Right Leg -->
-        <rect id="Legs" tabindex="0" aria-label="{aria_labels['Legs']}" x="105" y="235" width="15" height="80" rx="8" fill="{color_map['Legs']}" stroke="#bfae9e" stroke-width="2" />
-        <!-- Outline (stylized) -->
-        <path d="M100,22 Q80,50 80,95 Q80,250 87,320 Q90,350 100,480 Q110,350 113,320 Q120,250 120,95 Q120,50 100,22 Z" fill="none" stroke="#7a5c3a" stroke-width="2.5" />
-    </svg>
-    '''
-    return svg
+import streamlit.components.v1 as components
+from bs4 import BeautifulSoup
 
 st.set_page_config(
     page_title="Training Plans Dashboard",
@@ -94,6 +26,7 @@ st.markdown("""
     .stDataFrame th, .stDataFrame td { font-size: 1.1em; }
 </style>
 """, unsafe_allow_html=True)
+
 
 
 csv_dir = os.path.join(os.path.dirname(os.path.dirname(__file__)), "Trainingspläne")
@@ -211,101 +144,7 @@ if selected_csv:
         col1, col2 = st.columns([2, 1])
 
 
-        # --- Realistic HTML/CSS Human Body (major muscle groups as classes) ---
-
-
-        def get_realistic_body_html(highlighted=None):
-            highlighted = highlighted or []
-            # Map major muscle groups to class names used in the HTML
-            muscle_class_map = {
-                "Chest": "chest",
-                "Back": "back",
-                "Shoulders": "shoulders",
-                "Biceps": ["biceps-left", "biceps-right"],
-                "Triceps": ["triceps-left", "triceps-right"],
-                "Legs": ["leg-left", "leg-right"],
-                "Glutes": "glutes",
-                "Core": "core",
-            }
-            # Build highlight class set
-            highlight_classes = set()
-            for m in highlighted:
-                if m in muscle_class_map:
-                    val = muscle_class_map[m]
-                    if isinstance(val, list):
-                        highlight_classes.update(val)
-                    else:
-                        highlight_classes.add(val)
-
-            # Material Design 3 highlight color
-            highlight_color = "#FF5722"
-            base_color = "#f5e6da"  # Light neutral for dark mode
-            border_color = "#bfae9e"  # Mid-tone brown for contrast
-            skin_color = "#f5e6da"
-
-            # Inline CSS for realistic body
-            style = f'''
-<style>
-.realistic-body-container {{
-    width: 220px;
-    margin: 0 auto;
-    position: relative;
-    aspect-ratio: 2/5;
-    min-height: 400px;
-}}
-.realistic-body {{
-    position: relative;
-    width: 100%;
-    height: 100%;
-    min-height: 380px;
-}}
-.body-part {{
-    position: absolute;
-    background: {base_color};
-    border: 2px solid {border_color};
-    transition: background 0.3s, box-shadow 0.3s;
-    opacity: 0.95;
-    box-shadow: 0 0 8px rgba(0,0,0,0.08); /* subtle shadow for contrast */
-}}
-.body-part.highlight {{
-    background: {highlight_color};
-    box-shadow: 0 0 0 4px #ffab91;
-    opacity: 1.0;
-}}
-.head {{ left: 50%; top: 2%; width: 44px; height: 56px; background: {skin_color}; border-radius: 50%; transform: translate(-50%, 0); z-index: 2; }}
-.shoulders {{ left: 50%; top: 13%; width: 120px; height: 36px; border-radius: 40px; transform: translate(-50%, 0); z-index: 2; }}
-.chest {{ left: 50%; top: 21%; width: 80px; height: 44px; border-radius: 40px; transform: translate(-50%, 0); z-index: 2; }}
-.back {{ left: 50%; top: 21%; width: 92px; height: 54px; border-radius: 40px; transform: translate(-50%, 0); opacity: 0.5; z-index: 1; }}
-.core {{ left: 50%; top: 33%; width: 60px; height: 60px; border-radius: 40px; transform: translate(-50%, 0); z-index: 2; }}
-.glutes {{ left: 50%; top: 48%; width: 36px; height: 28px; border-radius: 40px; transform: translate(-50%, 0); z-index: 2; }}
-.biceps-left {{ left: 18%; top: 22%; width: 22px; height: 54px; border-radius: 40px; z-index: 2; }}
-.biceps-right {{ left: 70%; top: 22%; width: 22px; height: 54px; border-radius: 40px; z-index: 2; }}
-.triceps-left {{ left: 10%; top: 32%; width: 18px; height: 44px; border-radius: 40px; z-index: 2; }}
-.triceps-right {{ left: 80%; top: 32%; width: 18px; height: 44px; border-radius: 40px; z-index: 2; }}
-.leg-left {{ left: 38%; top: 56%; width: 22px; height: 110px; border-radius: 20px; z-index: 2; }}
-.leg-right {{ left: 58%; top: 56%; width: 22px; height: 110px; border-radius: 20px; z-index: 2; }}
-</style>
-'''
-            # HTML structure for the body
-            html = f'''
-            <div class="realistic-body-container">
-              <div class="realistic-body">
-                <div class="head body-part"></div>
-                <div class="shoulders body-part{' highlight' if 'shoulders' in highlight_classes else ''}"></div>
-                <div class="chest body-part{' highlight' if 'chest' in highlight_classes else ''}"></div>
-                <div class="back body-part{' highlight' if 'back' in highlight_classes else ''}"></div>
-                <div class="core body-part{' highlight' if 'core' in highlight_classes else ''}"></div>
-                <div class="glutes body-part{' highlight' if 'glutes' in highlight_classes else ''}"></div>
-                <div class="biceps-left body-part{' highlight' if 'biceps-left' in highlight_classes else ''}"></div>
-                <div class="biceps-right body-part{' highlight' if 'biceps-right' in highlight_classes else ''}"></div>
-                <div class="triceps-left body-part{' highlight' if 'triceps-left' in highlight_classes else ''}"></div>
-                <div class="triceps-right body-part{' highlight' if 'triceps-right' in highlight_classes else ''}"></div>
-                <div class="leg-left body-part{' highlight' if 'leg-left' in highlight_classes else ''}"></div>
-                <div class="leg-right body-part{' highlight' if 'leg-right' in highlight_classes else ''}"></div>
-              </div>
-            </div>
-            '''
-            return style + html
+        # ...existing code...
 
         # Kreisdiagramm: Anzahl Exercises pro Session
 
@@ -363,105 +202,115 @@ if selected_csv:
             if st.toggle(f"{ex}", value=(ex == exercises[0])):
                 selected_exs.append(ex)
 
-        with col3:
-            if selected_exs:
-                weight_df = df[df["Exercise"].isin(selected_exs)]
-                fig_weight = px.line(
-                    weight_df,
-                    x="Session",
-                    y="Weight (kg)",
-                    color="Exercise",
-                    markers=True,
-                    title=f"Gewichtsentwicklung: {' & '.join(selected_exs)} über Sessions"
-                )
-                fig_weight.update_layout(
-                    xaxis_title="Session",
-                    yaxis_title="Gewicht (kg)"
-                )
-                st.plotly_chart(fig_weight, use_container_width=True)
-            else:
-                st.info("Keine Übung ausgewählt.")
-
-        with col4:
-            if selected_exs:
-                reps_df = df[df["Exercise"].isin(selected_exs)]
-                bar_reps = reps_df.groupby(["Exercise", "Session"])['Reps'].mean().reset_index()
-                fig_reps_bar = px.bar(
-                    bar_reps,
-                    x="Session",
-                    y="Reps",
-                    color="Exercise",
-                    barmode="group",
-                    title=f"Wiederholungen (Balkendiagramm): {' & '.join(selected_exs)} über Sessions"
-                )
-                fig_reps_bar.update_layout(
-                    xaxis_title="Session",
-                    yaxis_title="Ø Wiederholungen"
-                )
-                st.plotly_chart(fig_reps_bar, use_container_width=True)
-            else:
-                st.info("Keine Übung ausgewählt.")
-
-        # --- MUSCLE GROUP VISUALIZATION SECTION (moved below graphs) ---
-        st.markdown("---")
-        st.subheader("Muskelgruppen-Visualisierung für Übungen")
-        st.markdown("Wähle eine Übung, um die trainierten Muskelgruppen am Körper hervorzuheben. Die Zuordnung kann unten bearbeitet werden.")
-
-        # Load mapping
-        mapping = load_mapping()
-        unique_exs = get_unique_exercises(df)
-
-        # Exercise selector for visualization
-        selected_ex_vis = st.selectbox("Übung auswählen:", unique_exs, key="muscle_vis_ex_select")
-        muscles_for_ex = mapping.get(selected_ex_vis, [])
-
-
-        # Show SVG with highlighted muscles (existing)
-        st.markdown(get_body_svg(muscles_for_ex), unsafe_allow_html=True)
-
-        # Show Realistic HTML/CSS Human Body (new)
-        import streamlit.components.v1 as components
-        st.markdown("<br><b>Realistische Körperdarstellung (SVG):</b>", unsafe_allow_html=True)
-        # Map major muscle groups to SVG classes for highlighting
-        muscle_class_map = {
-            "Chest": "chest",
-            "Back": "back",
-            "Shoulders": ["left-shoulder", "right-shoulder"],
-            "Biceps": ["left-arm", "right-arm"],
-            "Triceps": [],  # If you have triceps SVGs, add their classes here
-            "Legs": ["left-leg", "right-leg"],
-            "Glutes": "stomach",  # Or the correct SVG class for glutes
-            "Core": "stomach",    # Or the correct SVG class for core
-        }
-        highlight_classes = set()
-        for m in muscles_for_ex:
-            val = muscle_class_map.get(m)
-            if isinstance(val, list):
-                highlight_classes.update(val)
-            elif isinstance(val, str):
-                highlight_classes.add(val)
-        components.html(render_realistic_body_html(list(highlight_classes)), height=400)
-
-        # --- Editable Mapping UI (in Expander, less prominent) ---
-        with st.expander("Muskelgruppen-Zuordnung bearbeiten (optional)", expanded=False):
-            st.caption("Hier kannst du die Zuordnung von Übungen zu Muskelgruppen anpassen. In der Regel ist dies nur einmal nötig.")
-            with st.form("edit_muscle_mapping"):
-                new_mapping = {}
-                for ex in unique_exs:
-                    sel = st.multiselect(f"{ex}", MAJOR_MUSCLES, default=mapping.get(ex, []), key=f"map_{ex}")
-                    new_mapping[ex] = sel
-                submitted = st.form_submit_button("Speichern")
-                if submitted:
-                    save_mapping(new_mapping)
-                    st.success("Muskelgruppen-Zuordnung gespeichert. Änderungen werden nach Neuladen sichtbar.")
-
-        st.markdown("---")
-
-        # --- Data Table in Expander ---
-        with st.expander("Details als Tabelle anzeigen (optional)", expanded=False):
-            st.caption("Hier siehst du alle Trainingsdaten als Tabelle. Für die meisten Nutzer sind die Diagramme oben ausreichend.")
-            st.dataframe(df, use_container_width=True, hide_index=True)
+# --- Muscle Group Visualizer & Editor ---
+if selected_exs:
+    st.markdown("---")
+    st.subheader("Muskelgruppen-Visualisierung & Zuordnung")
+    html_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "assets", "index.html")
+    mapping_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), "muscle_mappings", "exercise_to_muscle.json")
+    # Load mappings
+    if os.path.exists(mapping_path):
+        with open(mapping_path, "r") as f:
+            exercise_to_muscle = json.load(f)
     else:
-        st.info("No data found in this CSV.")
+        exercise_to_muscle = {}
+
+    # Predefined muscle groups (from SVG regions)
+    with open(html_path, "r") as f:
+        full_html = f.read()
+    soup = BeautifulSoup(full_html, "html.parser")
+    svg_tags = soup.find_all("svg")
+    svg_html = "".join(str(tag) for tag in svg_tags)
+    svg_soup = BeautifulSoup(svg_html, "html.parser")
+    svg_ids = [tag.get('id') for tag in svg_soup.find_all('svg') if tag.get('id')]
+    predefined_groups = sorted(svg_ids)
+
+    # Collect all highlight ids for selected exercises
+    all_highlight_ids = set()
+    for ex in selected_exs:
+        current_groups = exercise_to_muscle.get(ex, [])
+        selected_groups = st.multiselect(
+            f"Wähle Muskelgruppen für '{ex}' (SVG-Regionen)",
+            options=predefined_groups,
+            default=[g for g in current_groups if g in predefined_groups],
+            key=f"predef_{ex}"
+        )
+        custom_groups = [g for g in current_groups if g not in predefined_groups]
+        custom_input = st.text_input(
+            f"Weitere Muskelgruppen für '{ex}' (kommagetrennt)",
+            value=", ".join(custom_groups),
+            key=f"custom_{ex}"
+        )
+        custom_list = [g.strip() for g in custom_input.split(",") if g.strip()]
+        if st.button(f"Speichere Muskelgruppen für '{ex}'", key=f"save_{ex}"):
+            exercise_to_muscle[ex] = selected_groups + custom_list
+            with open(mapping_path, "w") as f:
+                json.dump(exercise_to_muscle, f, indent=2, ensure_ascii=False)
+            st.success(f"Muskelgruppen für '{ex}' gespeichert.")
+        # Add highlighted SVG ids for this exercise
+        all_highlight_ids.update(selected_groups)
+        st.markdown(f"#### {ex}")
+
+    # Inject highlight style into SVG <path> elements for selected regions
+    for svg_id in svg_ids:
+        tag = svg_soup.find(id=svg_id)
+        if tag:
+            path = tag.find('path')
+            if path:
+                if svg_id in all_highlight_ids:
+                    path['style'] = 'fill:#ff9800;stroke:#d84315;stroke-width:2;opacity:0.9;'
+                else:
+                    path['style'] = 'fill:#e0e0e0;stroke:#bdbdbd;stroke-width:1;opacity:0.5;'
+    # Render SVG body only once
+    st.markdown("<div style='width:100%;text-align:center;'>" + str(svg_soup) + "</div>", unsafe_allow_html=True)
+
+
+    with col3:
+        if selected_exs:
+            weight_df = df[df["Exercise"].isin(selected_exs)]
+            fig_weight = px.line(
+                weight_df,
+                x="Session",
+                y="Weight (kg)",
+                color="Exercise",
+                markers=True,
+                title=f"Gewichtsentwicklung: {' & '.join(selected_exs)} über Sessions"
+            )
+            fig_weight.update_layout(
+                xaxis_title="Session",
+                yaxis_title="Gewicht (kg)"
+            )
+            st.plotly_chart(fig_weight, use_container_width=True)
+        else:
+            st.info("Keine Übung ausgewählt.")
+
+    with col4:
+        if selected_exs:
+            reps_df = df[df["Exercise"].isin(selected_exs)]
+            bar_reps = reps_df.groupby(["Exercise", "Session"])['Reps'].mean().reset_index()
+            fig_reps_bar = px.bar(
+                bar_reps,
+                x="Session",
+                y="Reps",
+                color="Exercise",
+                barmode="group",
+                title=f"Wiederholungen (Balkendiagramm): {' & '.join(selected_exs)} über Sessions"
+            )
+            fig_reps_bar.update_layout(
+                xaxis_title="Session",
+                yaxis_title="Ø Wiederholungen"
+            )
+            st.plotly_chart(fig_reps_bar, use_container_width=True)
+        else:
+            st.info("Keine Übung ausgewählt.")
+
+    # ...existing code...
+
+    # --- Data Table in Expander ---
+    with st.expander("Details als Tabelle anzeigen (optional)", expanded=False):
+        st.caption("Hier siehst du alle Trainingsdaten als Tabelle. Für die meisten Nutzer sind die Diagramme oben ausreichend.")
+        st.dataframe(df, use_container_width=True, hide_index=True)
 else:
-    st.info("Bitte wähle einen Trainingsplan in der Sidebar aus.")
+    st.info("No data found in this CSV.")
+
+st.info("Bitte wähle einen Trainingsplan in der Sidebar aus.")
