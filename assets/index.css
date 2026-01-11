@@ -1,34 +1,31 @@
-/* Vertical, realistic human body layout for SVGs */
+/* Unified human body SVG layout */
 .human-body {
-    position: relative;
-    width: 320px;
-    margin: 0 auto;
-    display: block;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 100%;
     background: transparent;
+    margin: 0 auto;
+    padding: 0;
 }
 .human-body svg {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
-    /* Default stacking, overridden below */
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
 }
-/* Position each body part vertically */
-#head { top: 0px; z-index: 10; }
-#chest { top: 90px; z-index: 9; }
-#stomach { top: 135px; z-index: 8; }
-#left-shoulder { top: 80px; left: 10%; z-index: 8; }
-#right-shoulder { top: 80px; left: 90%; z-index: 8; }
-#left-arm { top: 120px; left: 0%; z-index: 7; }
-#right-arm { top: 120px; left: 100%; z-index: 7; }
-#left-hand { top: 220px; left: 0%; z-index: 6; }
-#right-hand { top: 220px; left: 100%; z-index: 6; }
-#left-leg { top: 240px; left: 30%; z-index: 5; }
-#right-leg { top: 240px; left: 70%; z-index: 5; }
-#left-foot { top: 470px; left: 30%; z-index: 4; }
-#right-foot { top: 470px; left: 70%; z-index: 4; }
 
-/* Responsive for Streamlit */
-@media (max-width: 500px) {
-    .human-body { width: 95vw; }
-    .human-body svg { max-width: 80vw; }
+/* Highlighted body part style (to be injected via JS or Python) */
+.highlight {
+    stroke: #ff9800 !important;
+    stroke-width: 4 !important;
+    filter: drop-shadow(0 0 8px #ff9800);
+}
+
+/* Responsive for Streamlit and mobile */
+@media (max-width: 600px) {
+    .human-body svg {
+        width: 95vw;
+        height: auto;
+    }
 }

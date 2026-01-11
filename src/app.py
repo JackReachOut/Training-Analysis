@@ -215,15 +215,13 @@ if selected_exs:
     else:
         exercise_to_muscle = {}
 
-    # Predefined muscle groups (from SVG regions)
+    # Predefined muscle groups (from SVG <g> regions in unified SVG)
     with open(html_path, "r") as f:
         full_html = f.read()
     soup = BeautifulSoup(full_html, "html.parser")
-    svg_tags = soup.find_all("svg")
-    svg_html = "".join(str(tag) for tag in svg_tags)
-    svg_soup = BeautifulSoup(svg_html, "html.parser")
-    svg_ids = [tag.get('id') for tag in svg_soup.find_all('svg') if tag.get('id')]
-    predefined_groups = sorted(svg_ids)
+    svg_tag = soup.find("svg", id="human-body-svg")
+    predefined_groups = [g.get("id") for g in svg_tag.find_all("g") if g.get("id")]
+    predefined_groups = sorted(predefined_groups)
 
     # Collect all highlight ids for selected exercises
     all_highlight_ids = set()
@@ -251,18 +249,20 @@ if selected_exs:
         all_highlight_ids.update(selected_groups)
         st.markdown(f"#### {ex}")
 
-    # Inject highlight style into SVG <path> elements for selected regions
-    for svg_id in svg_ids:
-        tag = svg_soup.find(id=svg_id)
-        if tag:
-            path = tag.find('path')
-            if path:
-                if svg_id in all_highlight_ids:
-                    path['style'] = 'fill:#ff9800;stroke:#d84315;stroke-width:2;opacity:0.9;'
-                else:
-                    path['style'] = 'fill:#e0e0e0;stroke:#bdbdbd;stroke-width:1;opacity:0.5;'
+    # Inject highlight class into SVG <g> elements for selected regions
+    for g in svg_tag.find_all("g"):
+        gid = g.get("id")
+        if gid in all_highlight_ids:
+            g["class"] = (g.get("class", "") + " highlight").strip()
+        else:
+            # Remove highlight if present
+            if "class" in g.attrs:
+                g["class"] = " ".join([c for c in g["class"].split() if c != "highlight"])
+                if not g["class"].strip():
+                    del g["class"]
+
     # Render SVG body only once
-    st.markdown("<div style='width:100%;text-align:center;'>" + str(svg_soup) + "</div>", unsafe_allow_html=True)
+    st.markdown("<div style='width:100%;text-align:center;'>" + str(svg_tag) + "</div>", unsafe_allow_html=True)
 
 
     with col3:
