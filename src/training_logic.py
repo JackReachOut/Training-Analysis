@@ -1,5 +1,12 @@
 import io
 import datetime
+import pandas as pd
+import glob
+import os
+from dataclasses import dataclass, field
+from typing import List
+
+
 def generate_sample_csv():
     """
     Returns a sample CSV (as bytes) matching the expected structure for upload/download.
@@ -9,11 +16,11 @@ def generate_sample_csv():
         ["", "Session 1", "Session 2"],
         ["Planname", "", ""],
         ["Kniebeuge", "", ""],
-        ["60", "65", ""],
+        ["KG", "65", "70"],
         ["WD", 8, 7],
         ["WD", 8, 7],
         ["Bankdrücken", "", ""],
-        ["40", "42.5", ""],
+        ["KG", "42.5", "45"],
         ["WD", 10, 9],
         ["WD", 10, 9],
     ]
@@ -21,11 +28,6 @@ def generate_sample_csv():
     output = io.StringIO()
     df.to_csv(output, sep=';', header=False, index=False)
     return output.getvalue().encode("utf-8")
-import pandas as pd
-import glob
-import os
-from dataclasses import dataclass, field
-from typing import List
 
 def parse_float(val):
     """
