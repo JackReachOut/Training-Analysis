@@ -22,6 +22,15 @@ st.set_page_config(
 
 st.title("🏋️ Training Plans Dashboard")
 st.markdown("""
+**Worum geht es auf dieser Seite?**  
+Diese Webseite hilft dir, Trainingspläne systematisch zu analysieren und Fortschritte sichtbar zu machen. Ein guter Trainingsplan ist individuell, ausgewogen, enthält klare Ziele und setzt auf das Prinzip des *progressive Overload*: Die Belastung wird schrittweise gesteigert, um Muskelwachstum und Leistungssteigerung zu fördern. Regelmäßige Anpassungen und Erholung sind ebenso wichtig. Mit dieser Analyse kannst du Schwächen, Stärken und Entwicklungspotenziale deines Trainings erkennen.
+""")
+
+st.markdown("""
+**Was zeigen die Grafen?**  
+Die Visualisierungen machen Trainingsmuster, Fortschritte und Plateaus auf einen Blick erkennbar. Sie helfen dir, Trends zu entdecken, gezielt Übungen zu optimieren und die Wirksamkeit deines Plans zu überprüfen. So kannst du datenbasiert entscheiden, wie du dein Training weiterentwickelst.
+""")
+st.markdown("""
 <style>
     .main { background-color: #f5f5f5; }
     .stDataFrame th, .stDataFrame td { font-size: 1.1em; }
@@ -164,6 +173,10 @@ if rows:
     # --- Line/Bar Charts: Weight & Reps per Exercise ---
     st.markdown("---")
     st.subheader("Verlauf: Gewicht & Wiederholungen pro Übung über Sessions")
+    st.markdown("""
+        **Was zeigt diese Verlaufsgrafik?**  
+        Hier siehst du, wie sich das Trainingsgewicht und die Wiederholungszahlen für jede Übung im Zeitverlauf entwickeln. Das Prinzip des *progressive Overload* – also die schrittweise Steigerung der Belastung – ist entscheidend für Muskelaufbau und Leistungszuwachs. Anhand der Kurven erkennst du, ob du dich kontinuierlich steigerst, Plateaus erreichst oder Anpassungen im Plan nötig sind. So kannst du gezielt auf nachhaltigen Fortschritt hinarbeiten.
+        """)
     col3, col4 = st.columns([1, 1])
 
     exercises = df["Exercise"].unique()
