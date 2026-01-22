@@ -1,12 +1,20 @@
-import io
-import datetime
-import pandas as pd
-import glob
+# =============================
+# Imports
+# =============================
 import os
+import io
+import glob
+import datetime
 from dataclasses import dataclass, field
 from typing import List
 
+import pandas as pd
 
+
+
+# =============================
+# CSV Generation Utility
+# =============================
 def generate_sample_csv():
     """
     Returns a sample CSV (as bytes) matching the expected structure for upload/download.
@@ -29,6 +37,10 @@ def generate_sample_csv():
     df.to_csv(output, sep=';', header=False, index=False)
     return output.getvalue().encode("utf-8")
 
+
+# =============================
+# Utility: Parse Float
+# =============================
 def parse_float(val):
     """
     Convert a value to float, handling both comma and period as decimal separator.
@@ -41,6 +53,10 @@ def parse_float(val):
     except Exception:
         return 0.0
 
+
+# =============================
+# Data Classes
+# =============================
 @dataclass
 class Set:
     reps: int
@@ -57,7 +73,15 @@ class TrainingPlan:
     name: str
     exercises: List[Exercise] = field(default_factory=list)
 
+
+# =============================
+# CSV Parsing Logic
+# =============================
 def load_training_plan_from_csv(csv_path):
+    """
+    Parse a training plan CSV and return a list of TrainingPlan objects.
+    Handles block/row detection for plan-specific mapping.
+    """
     df = pd.read_csv(csv_path, header=None, delimiter=';')
     training_plans = []
     num_cols = df.shape[1]
@@ -101,7 +125,15 @@ def load_training_plan_from_csv(csv_path):
             training_plans.append(TrainingPlan(name=plan_name, exercises=exercises))
     return training_plans
 
+
+# =============================
+# Utility: Get CSV Path
+# =============================
 def get_csv_path(directory, filename):
+    """
+    Return the path to a CSV file in the given directory matching the filename.
+    Raises FileNotFoundError if not found.
+    """
     search_pattern = os.path.join(directory, filename)
     matches = glob.glob(search_pattern)
     if matches:
