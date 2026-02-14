@@ -1,9 +1,17 @@
-- max efford bouldering : 45min warm-up; Moonboard 7a+ / 7b, 60min all out; 3min break
-- Strength training; Sauna
-- board session : 20min warm-up; Kilterboard 6b+ / 6c, 40min 60grad; Kilterboard 6a / 6b, 20min 50grad campus; 3min break
-- specifig exercises like foot-switch on the wall, High Jumps
-- spray wall 45min warm-up; 60min; 3min break
-- specifig exercises like foot-switch on the wall, High Jumps
-- Zone 2-3 training; Sauna 
+- (1) max efford bouldering : 45min warm-up; Moonboard 7a+ / 7b, 60min all out; 3min break
+- (2) Strength training; Sauna
+- (3) specifig exercises like foot-switch on the wall, High Jumps
+- (4) board session : 20min warm-up; Kilterboard 6b+ / 6c, 40min 60grad; Kilterboard 6a / 6b, 20min 50grad campus; 3min break
+- (5) specifig exercises like foot-switch on the wall, High Jumps 
+- (6) spray wall 45min warm-up; 60min; 3min break 
+- (7) Zone 2-3 training; Sauna 
 
 Progressive olverload on boulder-training (time, break-time, ...)
+
+Montag (7)
+Dienstag (1)
+Mittwoch (2)
+Donnerstag (3)
+Freitag (4)
+Samstag (5)
+Sonntag (6)
